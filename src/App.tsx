@@ -26,13 +26,15 @@ function App() {
     window.localStorage.setItem(VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
 
+  const displayNodes = useMemo(() => deriveDisplayNodes(nodes), [nodes]);
+
   const kanbanRoots = useMemo(() => {
     if (kanbanTrail.length === 0) {
-      return nodes;
+      return displayNodes;
     }
     const current = kanbanTrail[kanbanTrail.length - 1];
     return current.children ?? [];
-  }, [kanbanTrail, nodes]);
+  }, [kanbanTrail, displayNodes]);
 
   useEffect(() => {
     setKanbanTrail([]);
@@ -44,7 +46,7 @@ function App() {
     }
   }, [meta, isIdle]);
 
-  const canRender = nodes.length > 0;
+  const canRender = displayNodes.length > 0;
   const savedAtLabel = meta
     ? new Date(meta.savedAt).toLocaleString("es-ES", {
         dateStyle: "medium",
@@ -203,7 +205,7 @@ function App() {
 
       <main>
         {viewMode === "tree" || !canRender ? (
-          <BookmarkTree nodes={nodes} />
+          <BookmarkTree nodes={displayNodes} />
         ) : (
           <BookmarkKanbanBoard
             nodes={kanbanRoots}
@@ -253,4 +255,49 @@ function activeResetBackground(disabled: boolean) {
     return "#f8fafc";
   }
   return "#e0e7ff";
+}
+
+const SKIPPED_ROOTS = new Set(["bookmarks bar", "barra de marcadores"]);
+
+function deriveDisplayNodes(nodes: BookmarkNode[]): BookmarkNode[] {
+  if (nodes.length === 0) {
+    return nodes;
+  }
+
+  const [first, ...rest] = nodes;
+  if (first.type === "folder" && shouldSkipRoot(first.title)) {
+    const rootLower = first.title.trim().toLowerCase();
+    const flattened = (first.children ?? []).map((child) => stripRootPath(child, rootLower));
+    return [...flattened, ...rest];
+  }
+
+  return nodes;
+}
+
+function shouldSkipRoot(title: string) {
+  return SKIPPED_ROOTS.has(title.trim().toLowerCase());
+}
+
+function stripRootPath(node: BookmarkNode, rootLower: string): BookmarkNode {
+  const trimmedPath = trimPath(node.path, rootLower);
+  const children = node.children?.map((child) => stripRootPath(child, rootLower));
+
+  return {
+    ...node,
+    path: trimmedPath,
+    ...(children ? { children } : {})
+  };
+}
+
+function trimPath(path: string[], rootLower: string) {
+  if (!path.length) {
+    return path;
+  }
+
+  const [first, ...rest] = path;
+  if (first.trim().toLowerCase() === rootLower) {
+    return rest;
+  }
+
+  return [...path];
 }
