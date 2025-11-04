@@ -1,14 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FilePicker } from "@/components/FilePicker";
 import { useBookmarkFile } from "@/hooks/useBookmarkFile";
 import { BookmarkTree, BookmarkKanbanBoard } from "@/features/bookmarks";
 
 type ViewMode = "tree" | "kanban";
+const VIEW_MODE_KEY = "bookmarks-map.view-mode";
 
 function App() {
   const { nodes, meta, isIdle, isLoading, isError, error, onFileSelected, reset } =
     useBookmarkFile();
-  const [viewMode, setViewMode] = useState<ViewMode>("tree");
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") {
+      return "tree";
+    }
+    const stored = window.localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null;
+    return stored === "kanban" ? "kanban" : "tree";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(VIEW_MODE_KEY, viewMode);
+  }, [viewMode]);
 
   const canRender = nodes.length > 0;
   const savedAtLabel = meta
@@ -59,13 +73,22 @@ function App() {
           type="button"
           onClick={reset}
           disabled={isIdle}
+          onMouseEnter={(event) => {
+            if (isIdle) {
+              return;
+            }
+            (event.currentTarget.style.backgroundColor = "#c7d2fe");
+          }}
+          onMouseLeave={(event) => {
+            event.currentTarget.style.backgroundColor = activeResetBackground(isIdle);
+          }}
           style={{
             padding: "0.75rem 1.25rem",
             borderRadius: "0.75rem",
             border: "1px solid #cbd5f5",
-            background: "white",
+            background: activeResetBackground(isIdle),
             cursor: isIdle ? "not-allowed" : "pointer",
-            opacity: isIdle ? 0.5 : 1,
+            color: isIdle ? "#94a3b8" : "#1e3a8a",
             fontWeight: 600
           }}
         >
@@ -174,4 +197,10 @@ function ToggleButton({ label, active, disabled, onClick }: ToggleButtonProps) {
       {label}
     </button>
   );
+}
+function activeResetBackground(disabled: boolean) {
+  if (disabled) {
+    return "#f8fafc";
+  }
+  return "#e0e7ff";
 }
