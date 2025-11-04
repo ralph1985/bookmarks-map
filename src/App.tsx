@@ -1,10 +1,16 @@
+import { useState } from "react";
 import { FilePicker } from "@/components/FilePicker";
 import { useBookmarkFile } from "@/hooks/useBookmarkFile";
-import { BookmarkTree } from "@/features/bookmarks";
+import { BookmarkTree, BookmarkKanbanBoard } from "@/features/bookmarks";
+
+type ViewMode = "tree" | "kanban";
 
 function App() {
   const { nodes, isIdle, isLoading, isError, error, onFileSelected, reset } =
     useBookmarkFile();
+  const [viewMode, setViewMode] = useState<ViewMode>("tree");
+
+  const canRender = nodes.length > 0;
 
   return (
     <div
@@ -65,6 +71,29 @@ function App() {
         </nav>
       </section>
 
+      <section
+        aria-label="Seleccionar visualización"
+        style={{
+          display: "inline-flex",
+          border: "1px solid #cbd5f5",
+          borderRadius: "999px",
+          overflow: "hidden",
+          alignSelf: "flex-start"
+        }}
+      >
+        <ToggleButton
+          label="Árbol"
+          active={viewMode === "tree"}
+          onClick={() => setViewMode("tree")}
+        />
+        <ToggleButton
+          label="Kanban"
+          active={viewMode === "kanban"}
+          onClick={() => setViewMode("kanban")}
+          disabled={!canRender}
+        />
+      </section>
+
       {isError ? (
         <div
           role="alert"
@@ -81,10 +110,44 @@ function App() {
       ) : null}
 
       <main>
-        <BookmarkTree nodes={nodes} />
+        {viewMode === "tree" || !canRender ? (
+          <BookmarkTree nodes={nodes} />
+        ) : (
+          <BookmarkKanbanBoard nodes={nodes} />
+        )}
       </main>
     </div>
   );
 }
 
 export default App;
+
+type ToggleButtonProps = {
+  label: string;
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+};
+
+function ToggleButton({ label, active, disabled, onClick }: ToggleButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      style={{
+        border: "none",
+        backgroundColor: active ? "#1e3a8a" : "transparent",
+        color: active ? "#ffffff" : disabled ? "#94a3b8" : "#1e3a8a",
+        padding: "0.5rem 1.25rem",
+        fontWeight: 600,
+        fontSize: "0.9rem",
+        cursor: disabled ? "not-allowed" : "pointer",
+        transition: "background-color 0.15s ease-in-out"
+      }}
+    >
+      {label}
+    </button>
+  );
+}

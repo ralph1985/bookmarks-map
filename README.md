@@ -18,6 +18,11 @@ Aplicación web para transformar el archivo `Bookmarks` de Google Chrome en un m
 - `src/` — código de la app (componentes, hooks, librerías).
 - `public/` — assets estáticos y muestras HTML (`data/sample-bookmarks.html`, `data/bookmarks_*.html`).
 
+### Visualizaciones disponibles
+- **Árbol:** estructura jerárquica clásica para inspeccionar carpetas y enlaces.
+- **Kanban:** cada carpeta principal se convierte en una columna horizontal (con scroll) que lista sus subcarpetas y marcadores como tarjetas.
+Usa los botones de la parte superior para alternar entre ambas vistas.
+
 ### Desarrollo rápido
 1. Clona el repositorio y ejecuta `npm install`.
 2. Inicia el servidor con `npm run dev`.
