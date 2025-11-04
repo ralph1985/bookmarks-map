@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent
+} from "react";
 import { FilePicker } from "@/components/FilePicker";
 import { useBookmarkFile } from "@/hooks/useBookmarkFile";
 import { BookmarkTree, BookmarkKanbanBoard } from "@/features/bookmarks";
@@ -19,6 +25,7 @@ function App() {
     return stored === "kanban" ? "kanban" : "tree";
   });
   const [kanbanTrail, setKanbanTrail] = useState<BookmarkNode[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -28,14 +35,18 @@ function App() {
   }, [viewMode]);
 
   const displayNodes = useMemo(() => deriveDisplayNodes(nodes), [nodes]);
+  const filteredNodes = useMemo(
+    () => filterNodes(displayNodes, searchQuery),
+    [displayNodes, searchQuery],
+  );
 
   const kanbanRoots = useMemo(() => {
     if (kanbanTrail.length === 0) {
-      return displayNodes;
+      return filteredNodes;
     }
     const current = kanbanTrail[kanbanTrail.length - 1];
     return current.children ?? [];
-  }, [kanbanTrail, displayNodes]);
+  }, [kanbanTrail, filteredNodes]);
 
   useEffect(() => {
     setKanbanTrail([]);
@@ -47,7 +58,12 @@ function App() {
     }
   }, [meta, isIdle]);
 
-  const canRender = displayNodes.length > 0;
+  useEffect(() => {
+    setKanbanTrail([]);
+  }, [searchQuery]);
+
+  const trimmedQuery = searchQuery.trim();
+  const canRender = filteredNodes.length > 0;
   const savedAtLabel = meta
     ? new Date(meta.savedAt).toLocaleString("es-ES", {
         dateStyle: "medium",
@@ -62,6 +78,9 @@ function App() {
 
   const handleOpenFolder = useCallback(
     (node: BookmarkNode) => {
+      if (searchQuery.trim()) {
+        return;
+      }
       if (node.type !== "folder") {
         return;
       }
@@ -73,7 +92,7 @@ function App() {
         return [...previous, node];
       });
     },
-    [],
+    [searchQuery],
   );
 
   const handleNavigateTrail = useCallback((targetIndex: number) => {
@@ -84,6 +103,16 @@ function App() {
       return previous.slice(0, targetIndex + 1);
     });
   }, []);
+
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+  };
+
+  const isSearching = Boolean(trimmedQuery);
 
   return (
     <div className={styles.container}>
@@ -101,6 +130,23 @@ function App() {
           accept=".html,.htm,text/html,application/xhtml+xml"
           onFileSelected={onFileSelected}
         />
+
+        <div className={styles.searchGroup}>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className={styles.searchInput}
+            placeholder="Buscar por título o URL"
+            aria-label="Buscar marcadores"
+          />
+          {isSearching ? (
+            <button type="button" onClick={handleClearSearch} className={styles.clearButton}>
+              Limpiar
+            </button>
+          ) : null}
+        </div>
+
         <button type="button" onClick={reset} disabled={isIdle} className={styles.resetButton}>
           Olvidar archivo
         </button>
@@ -133,8 +179,14 @@ function App() {
       ) : null}
 
       <main>
-        {viewMode === "tree" || !canRender ? (
-          <BookmarkTree nodes={displayNodes} />
+        {!canRender ? (
+          <div className={styles.noResults}>
+            {trimmedQuery
+              ? `No se encontraron marcadores que coincidan con “${trimmedQuery}”.`
+              : "No hay marcadores para mostrar. Sube un archivo HTML para comenzar."}
+          </div>
+        ) : viewMode === "tree" ? (
+          <BookmarkTree nodes={filteredNodes} />
         ) : (
           <BookmarkKanbanBoard
             nodes={kanbanRoots}
@@ -162,6 +214,7 @@ function ToggleButton({ label, active, disabled, onClick }: ToggleButtonProps) {
   if (active) {
     classes.push(styles.toggleActive);
   }
+
   return (
     <button
       type="button"
@@ -176,6 +229,40 @@ function ToggleButton({ label, active, disabled, onClick }: ToggleButtonProps) {
 }
 
 const SKIPPED_ROOTS = new Set(["bookmarks bar", "barra de marcadores"]);
+
+function filterNodes(nodes: BookmarkNode[], query: string): BookmarkNode[] {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) {
+    return nodes;
+  }
+
+  return nodes
+    .map((node) => filterNode(node, normalized))
+    .filter((node): node is BookmarkNode => node !== null);
+}
+
+function filterNode(node: BookmarkNode, query: string): BookmarkNode | null {
+  const matchesSelf =
+    node.title.toLowerCase().includes(query) ||
+    (node.url?.toLowerCase().includes(query) ?? false);
+
+  if (node.type === "url") {
+    return matchesSelf ? node : null;
+  }
+
+  const filteredChildren = (node.children ?? [])
+    .map((child) => filterNode(child, query))
+    .filter((child): child is BookmarkNode => child !== null);
+
+  if (matchesSelf || filteredChildren.length > 0) {
+    return {
+      ...node,
+      children: filteredChildren
+    };
+  }
+
+  return null;
+}
 
 function deriveDisplayNodes(nodes: BookmarkNode[]): BookmarkNode[] {
   if (nodes.length === 0) {

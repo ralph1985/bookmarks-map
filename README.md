@@ -26,6 +26,9 @@ Usa los botones de la parte superior para alternar entre ambas vistas.
 ### Persistencia local
 Tras subir un archivo HTML, la aplicación guarda el contenido en `localStorage` y lo restaura automáticamente en visitas posteriores. También recuerda la vista elegida (Árbol/Kanban) para que la sesión quede tal como la dejaste. Usa el botón “Olvidar archivo” para limpiar la sesión y cargar un archivo nuevo desde cero.
 
+### Búsqueda
+El buscador admite coincidencias parciales por título o URL. Los resultados filtran tanto el árbol como el tablero Kanban, manteniendo visible solo los nodos que coinciden.
+
 ### Desarrollo rápido
 1. Clona el repositorio y ejecuta `npm install`.
 2. Inicia el servidor con `npm run dev`.
