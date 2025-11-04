@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { BookmarkNode } from "@/lib/bookmarks";
+import styles from "./BookmarkKanbanBoard.module.css";
 
 type Props = {
   nodes: BookmarkNode[];
@@ -20,7 +21,7 @@ type KanbanItem = {
 
 export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: Props) {
   const headerRef = useRef<HTMLDivElement>(null);
-  const [stickyOffset, setStickyOffset] = useState(72);
+  const [stickyOffset, setStickyOffset] = useState(80);
 
   const columns = useMemo(() => buildColumns(nodes), [nodes]);
   const breadcrumbs = useMemo(
@@ -28,15 +29,8 @@ export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: 
       { label: "Inicio", index: -1 },
       ...trail.map((node, index) => ({ label: node.title, index }))
     ],
-    [trail]
+    [trail],
   );
-
-  const handleBack = () => {
-    if (trail.length === 0) {
-      return;
-    }
-    onNavigate(trail.length - 2);
-  };
 
   useEffect(() => {
     const header = headerRef.current;
@@ -60,50 +54,30 @@ export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: 
     };
   }, [nodes, trail]);
 
+  const handleBack = () => {
+    if (trail.length === 0) {
+      return;
+    }
+    onNavigate(trail.length - 2);
+  };
+
   return (
-    <div style={{ display: "grid", gap: "1.5rem", position: "relative" }}>
-      <header
-        ref={headerRef}
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.75rem",
-          alignItems: "center",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          padding: "0.75rem 0",
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.75) 100%)",
-          backdropFilter: "blur(8px)",
-          borderBottom: "1px solid #e2e8f0"
-        }}
-      >
+    <div className={styles.board}>
+      <header ref={headerRef} className={styles.boardHeader}>
         <button
           type="button"
           onClick={handleBack}
           disabled={trail.length === 0}
-          style={{
-            borderRadius: "999px",
-            border: "1px solid #cbd5f5",
-            backgroundColor: trail.length === 0 ? "#f8fafc" : "#e0e7ff",
-            color: trail.length === 0 ? "#94a3b8" : "#1e3a8a",
-            fontWeight: 600,
-            padding: "0.35rem 1rem",
-            cursor: trail.length === 0 ? "not-allowed" : "pointer"
-          }}
+          className={styles.backButton}
         >
           ← Atrás
         </button>
-        <nav
-          aria-label="Ruta de carpetas"
-          style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}
-        >
+        <nav aria-label="Ruta de carpetas" className={styles.breadcrumbs}>
           {breadcrumbs.map((crumb, index) => {
             const isLast = index === breadcrumbs.length - 1;
             if (isLast) {
               return (
-                <span key={`${crumb.label}-${crumb.index}`} style={{ fontWeight: 600 }}>
+                <span key={`${crumb.label}-${crumb.index}`} className={styles.breadcrumbCurrent}>
                   {crumb.label}
                 </span>
               );
@@ -113,14 +87,7 @@ export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: 
                 key={`${crumb.label}-${crumb.index}`}
                 type="button"
                 onClick={() => onNavigate(crumb.index)}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  color: "#1d4ed8",
-                  textDecoration: "underline",
-                  fontWeight: 500,
-                  cursor: "pointer"
-                }}
+                className={styles.breadcrumbButton}
               >
                 {crumb.label}
               </button>
@@ -129,99 +96,25 @@ export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: 
         </nav>
       </header>
 
-      <div
-        style={{
-          display: "flex",
-          gap: "1.25rem",
-          overflowX: "auto",
-          paddingBottom: "0.5rem"
-        }}
-      >
+      <div className={styles.boardRow}>
         {columns.length === 0 ? (
-          <div
-            style={{
-              borderRadius: "0.85rem",
-              border: "1px dashed #cbd5f5",
-              backgroundColor: "#f8fafc",
-              padding: "1.5rem",
-              minWidth: "260px",
-              color: "#64748b",
-              fontWeight: 500
-            }}
-          >
+          <div className={`${styles.emptyNotice} ${styles.emptyBoard}`}>
             Esta carpeta no contiene subcarpetas ni marcadores.
           </div>
         ) : (
           columns.map((column) => (
-            <section
-              key={column.id}
-              style={{
-                minWidth: "260px",
-                maxWidth: "320px",
-                flex: "0 0 auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.85rem",
-                backgroundColor: "#f8fafc",
-                borderRadius: "0.75rem",
-                border: "1px solid #e2e8f0",
-                padding: "1rem",
-                boxSizing: "border-box"
-              }}
-            >
+            <section key={column.id} className={styles.column}>
               <header
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  paddingBottom: "0.35rem",
-                  borderBottom: "1px solid rgba(148, 163, 184, 0.4)",
-                  position: "sticky",
-                  top: stickyOffset,
-                  backgroundColor: "#f8fafc",
-                  zIndex: 2
-                }}
+                className={styles.columnHeader}
+                style={{ top: stickyOffset }}
               >
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: "1rem",
-                    fontWeight: 600,
-                    color: "#1e293b"
-                  }}
-                >
-                  {column.title}
-                </h3>
-                <span
-                  style={{
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    color: "#475569",
-                    backgroundColor: "#e0e7ff",
-                    borderRadius: "999px",
-                    padding: "0.15rem 0.6rem"
-                  }}
-                >
-                  {column.items.length}
-                </span>
+                <h3 className={styles.columnTitle}>{column.title}</h3>
+                <span className={styles.columnCount}>{column.items.length}</span>
               </header>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div className={styles.columnBody}>
                 {column.items.length === 0 ? (
-                  <p
-                    style={{
-                      margin: 0,
-                      padding: "0.75rem",
-                      borderRadius: "0.65rem",
-                      border: "1px dashed #cbd5f5",
-                      backgroundColor: "#ffffff",
-                      color: "#64748b",
-                      fontSize: "0.85rem"
-                    }}
-                  >
-                    Sin elementos directos.
-                  </p>
+                  <p className={styles.emptyNotice}>Sin elementos directos.</p>
                 ) : (
                   column.items.map((item) => (
                     <KanbanCard key={item.node.id} item={item} onOpenFolder={onOpenFolder} />
@@ -240,6 +133,13 @@ function KanbanCard({ item, onOpenFolder }: { item: KanbanItem; onOpenFolder: (n
   const isFolder = item.node.type === "folder";
   const childrenCount = item.node.children?.length ?? 0;
   const fullPath = [...item.node.path, item.node.title].join(" › ");
+  const cardClasses = [styles.card];
+  if (isFolder) {
+    cardClasses.push(styles.cardInteractive);
+  }
+
+  const iconClasses = [styles.icon, isFolder ? styles.iconFolder : styles.iconLink].join(" ");
+
   const interactiveProps = isFolder
     ? {
         role: "button" as const,
@@ -250,95 +150,34 @@ function KanbanCard({ item, onOpenFolder }: { item: KanbanItem; onOpenFolder: (n
             event.preventDefault();
             onOpenFolder(item.node);
           }
-        },
-        style: { cursor: "pointer" }
+        }
       }
     : {
         role: "group" as const,
-        tabIndex: -1,
-        style: { cursor: "default" }
+        tabIndex: -1
       };
 
   return (
-    <div
-      {...interactiveProps}
-      style={{
-        borderRadius: "0.75rem",
-        padding: "0.9rem",
-        backgroundColor: "#ffffff",
-        boxShadow: "0 14px 32px -24px rgba(15, 23, 42, 0.45)",
-        border: "1px solid #e2e8f0",
-        display: "grid",
-        gap: "0.4rem"
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.45rem"
-        }}
-      >
-        <span
-          aria-hidden
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "1.6rem",
-            height: "1.6rem",
-            borderRadius: "0.5rem",
-            backgroundColor: isFolder ? "#4338ca" : "#db2777",
-            color: "#ffffff",
-            fontSize: "0.85rem"
-          }}
-        >
+    <div {...interactiveProps} className={cardClasses.join(" ")}>
+      <div className={styles.cardHeader}>
+        <span aria-hidden className={iconClasses}>
           {isFolder ? "📁" : "🔗"}
         </span>
         {isFolder ? (
-          <strong style={{ fontSize: "0.95rem" }}>{item.node.title}</strong>
+          <span className={styles.cardTitle}>{item.node.title}</span>
         ) : item.node.url ? (
-          <a
-            href={item.node.url}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              color: "#1d4ed8",
-              fontWeight: 600,
-              textDecoration: "none",
-              wordBreak: "break-word"
-            }}
-          >
+          <a href={item.node.url} target="_blank" rel="noreferrer" className={styles.cardLink}>
             {item.node.title}
           </a>
         ) : (
-          <span style={{ fontWeight: 600 }}>{item.node.title}</span>
+          <span className={styles.cardTitle}>{item.node.title}</span>
         )}
       </div>
 
-      <footer
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.35rem",
-          fontSize: "0.75rem",
-          color: "#475569"
-        }}
-      >
-        <span
-          style={{
-            backgroundColor: "#f1f5f9",
-            borderRadius: "999px",
-            padding: "0.15rem 0.6rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            fontWeight: 600
-          }}
-        >
-          {isFolder ? "Carpeta" : "Marcador"}
-        </span>
+      <footer className={styles.cardFooter}>
+        <span className={styles.badge}>{isFolder ? "Carpeta" : "Marcador"}</span>
         {isFolder ? <span>{childrenCount} elemento(s)</span> : null}
-        <span style={{ color: "#0f172a" }}>{fullPath}</span>
+        <span className={styles.path}>{fullPath}</span>
       </footer>
     </div>
   );
