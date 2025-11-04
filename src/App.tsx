@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FilePicker } from "@/components/FilePicker";
 import { useBookmarkFile } from "@/hooks/useBookmarkFile";
 import { BookmarkTree, BookmarkKanbanBoard } from "@/features/bookmarks";
+import type { BookmarkNode } from "@/lib/bookmarks";
 
 type ViewMode = "tree" | "kanban";
 const VIEW_MODE_KEY = "bookmarks-map.view-mode";
@@ -16,6 +17,7 @@ function App() {
     const stored = window.localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null;
     return stored === "kanban" ? "kanban" : "tree";
   });
+  const [kanbanTrail, setKanbanTrail] = useState<BookmarkNode[]>([]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -23,6 +25,24 @@ function App() {
     }
     window.localStorage.setItem(VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
+
+  const kanbanRoots = useMemo(() => {
+    if (kanbanTrail.length === 0) {
+      return nodes;
+    }
+    const current = kanbanTrail[kanbanTrail.length - 1];
+    return current.children ?? [];
+  }, [kanbanTrail, nodes]);
+
+  useEffect(() => {
+    setKanbanTrail([]);
+  }, [meta?.fileName, meta?.savedAt]);
+
+  useEffect(() => {
+    if (!meta && isIdle) {
+      setKanbanTrail([]);
+    }
+  }, [meta, isIdle]);
 
   const canRender = nodes.length > 0;
   const savedAtLabel = meta
@@ -36,6 +56,31 @@ function App() {
     : meta
     ? "Actualizar marcadores"
     : "Subir marcadores";
+
+  const handleOpenFolder = useCallback(
+    (node: BookmarkNode) => {
+      if (node.type !== "folder") {
+        return;
+      }
+      setKanbanTrail((previous) => {
+        const alreadyCurrent = previous[previous.length - 1];
+        if (alreadyCurrent && alreadyCurrent.id === node.id) {
+          return previous;
+        }
+        return [...previous, node];
+      });
+    },
+    [setKanbanTrail]
+  );
+
+  const handleNavigateTrail = useCallback((targetIndex: number) => {
+    setKanbanTrail((previous) => {
+      if (targetIndex < 0) {
+        return [];
+      }
+      return previous.slice(0, targetIndex + 1);
+    });
+  }, []);
 
   return (
     <div
@@ -77,7 +122,7 @@ function App() {
             if (isIdle) {
               return;
             }
-            (event.currentTarget.style.backgroundColor = "#c7d2fe");
+            event.currentTarget.style.backgroundColor = "#c7d2fe";
           }}
           onMouseLeave={(event) => {
             event.currentTarget.style.backgroundColor = activeResetBackground(isIdle);
@@ -86,7 +131,7 @@ function App() {
             padding: "0.75rem 1.25rem",
             borderRadius: "0.75rem",
             border: "1px solid #cbd5f5",
-            background: activeResetBackground(isIdle),
+            backgroundColor: activeResetBackground(isIdle),
             cursor: isIdle ? "not-allowed" : "pointer",
             color: isIdle ? "#94a3b8" : "#1e3a8a",
             fontWeight: 600
@@ -160,7 +205,12 @@ function App() {
         {viewMode === "tree" || !canRender ? (
           <BookmarkTree nodes={nodes} />
         ) : (
-          <BookmarkKanbanBoard nodes={nodes} />
+          <BookmarkKanbanBoard
+            nodes={kanbanRoots}
+            trail={kanbanTrail}
+            onOpenFolder={handleOpenFolder}
+            onNavigate={handleNavigateTrail}
+          />
         )}
       </main>
     </div>

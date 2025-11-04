@@ -1,9 +1,11 @@
+import { useMemo, type KeyboardEvent } from "react";
 import type { BookmarkNode } from "@/lib/bookmarks";
 
-type KanbanGroup = {
-  id: string;
-  title: string;
-  columns: KanbanColumn[];
+type Props = {
+  nodes: BookmarkNode[];
+  trail: BookmarkNode[];
+  onOpenFolder: (node: BookmarkNode) => void;
+  onNavigate: (targetIndex: number) => void;
 };
 
 type KanbanColumn = {
@@ -13,277 +15,311 @@ type KanbanColumn = {
 };
 
 type KanbanItem = {
-  id: string;
-  title: string;
-  type: BookmarkNode["type"];
-  url?: string;
-  path: string[];
-  childrenCount: number;
+  node: BookmarkNode;
 };
 
-type Props = {
-  nodes: BookmarkNode[];
-};
+export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: Props) {
+  const columns = useMemo(() => buildColumns(nodes), [nodes]);
+  const breadcrumbs = useMemo(
+    () => [
+      { label: "Inicio", index: -1 },
+      ...trail.map((node, index) => ({ label: node.title, index }))
+    ],
+    [trail]
+  );
 
-export function BookmarkKanbanBoard({ nodes }: Props) {
-  if (!nodes.length) {
-    return (
-      <p style={{ color: "#64748b" }}>
-        Carga el HTML de marcadores para visualizarlo en formato Kanban.
-      </p>
-    );
-  }
-
-  const groups = buildGroups(nodes);
+  const handleBack = () => {
+    if (trail.length === 0) {
+      return;
+    }
+    onNavigate(trail.length - 2);
+  };
 
   return (
-    <div style={{ display: "grid", gap: "1.75rem" }}>
-      {groups.map((group) => (
-        <section key={group.id} style={{ display: "grid", gap: "1rem" }}>
-          <header style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <h2 style={{ margin: 0, fontSize: "1.1rem", color: "#1e293b" }}>
-              {group.title}
-            </h2>
-            <span
-              style={{
-                fontSize: "0.8rem",
-                color: "#475569"
-              }}
-            >
-              {group.columns.length} columna{group.columns.length === 1 ? "" : "s"}
-            </span>
-          </header>
-
-          <div
-            style={{
-              display: "flex",
-              gap: "1.25rem",
-              overflowX: "auto",
-              paddingBottom: "0.5rem"
-            }}
-          >
-            {group.columns.map((column) => (
-              <article
-                key={column.id}
+    <div style={{ display: "grid", gap: "1.5rem" }}>
+      <header
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+          alignItems: "center"
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleBack}
+          disabled={trail.length === 0}
+          style={{
+            borderRadius: "999px",
+            border: "1px solid #cbd5f5",
+            backgroundColor: trail.length === 0 ? "#f8fafc" : "#e0e7ff",
+            color: trail.length === 0 ? "#94a3b8" : "#1e3a8a",
+            fontWeight: 600,
+            padding: "0.35rem 1rem",
+            cursor: trail.length === 0 ? "not-allowed" : "pointer"
+          }}
+        >
+          ← Atrás
+        </button>
+        <nav
+          aria-label="Ruta de carpetas"
+          style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}
+        >
+          {breadcrumbs.map((crumb, index) => {
+            const isLast = index === breadcrumbs.length - 1;
+            if (isLast) {
+              return (
+                <span key={`${crumb.label}-${crumb.index}`} style={{ fontWeight: 600 }}>
+                  {crumb.label}
+                </span>
+              );
+            }
+            return (
+              <button
+                key={`${crumb.label}-${crumb.index}`}
+                type="button"
+                onClick={() => onNavigate(crumb.index)}
                 style={{
-                  minWidth: "260px",
-                  maxWidth: "320px",
-                  flex: "0 0 auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.85rem",
-                  backgroundColor: "#f8fafc",
-                  borderRadius: "0.75rem",
-                  border: "1px solid #e2e8f0",
-                  padding: "1rem"
+                  border: "none",
+                  background: "transparent",
+                  color: "#1d4ed8",
+                  textDecoration: "underline",
+                  fontWeight: 500,
+                  cursor: "pointer"
                 }}
               >
-                <header
+                {crumb.label}
+              </button>
+            );
+          })}
+        </nav>
+      </header>
+
+      <div
+        style={{
+          display: "flex",
+          gap: "1.25rem",
+          overflowX: "auto",
+          paddingBottom: "0.5rem"
+        }}
+      >
+        {columns.length === 0 ? (
+          <div
+            style={{
+              borderRadius: "0.85rem",
+              border: "1px dashed #cbd5f5",
+              backgroundColor: "#f8fafc",
+              padding: "1.5rem",
+              minWidth: "260px",
+              color: "#64748b",
+              fontWeight: 500
+            }}
+          >
+            Esta carpeta no contiene subcarpetas ni marcadores.
+          </div>
+        ) : (
+          columns.map((column) => (
+            <section
+              key={column.id}
+              style={{
+                minWidth: "260px",
+                maxWidth: "320px",
+                flex: "0 0 auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.85rem",
+                backgroundColor: "#f8fafc",
+                borderRadius: "0.75rem",
+                border: "1px solid #e2e8f0",
+                padding: "1rem"
+              }}
+            >
+              <header
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: "0.75rem"
+                }}
+              >
+                <h3
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: "0.75rem"
+                    margin: 0,
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    color: "#1e293b"
                   }}
                 >
-                  <h3
+                  {column.title}
+                </h3>
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    color: "#475569",
+                    backgroundColor: "#e0e7ff",
+                    borderRadius: "999px",
+                    padding: "0.15rem 0.6rem"
+                  }}
+                >
+                  {column.items.length}
+                </span>
+              </header>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {column.items.length === 0 ? (
+                  <p
                     style={{
                       margin: 0,
-                      fontSize: "1rem",
-                      fontWeight: 600,
-                      color: "#1e293b"
+                      padding: "0.75rem",
+                      borderRadius: "0.65rem",
+                      border: "1px dashed #cbd5f5",
+                      backgroundColor: "#ffffff",
+                      color: "#64748b",
+                      fontSize: "0.85rem"
                     }}
                   >
-                    {column.title}
-                  </h3>
-                  <span
-                    style={{
-                      fontSize: "0.75rem",
-                      fontWeight: 600,
-                      color: "#475569",
-                      backgroundColor: "#e0e7ff",
-                      borderRadius: "999px",
-                      padding: "0.15rem 0.6rem"
-                    }}
-                  >
-                    {column.items.length}
-                  </span>
-                </header>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  {column.items.length === 0 ? (
-                    <p
-                      style={{
-                        margin: 0,
-                        padding: "0.75rem",
-                        borderRadius: "0.65rem",
-                        border: "1px dashed #cbd5f5",
-                        backgroundColor: "#fff",
-                        color: "#64748b",
-                        fontSize: "0.85rem"
-                      }}
-                    >
-                      Sin elementos directos.
-                    </p>
-                  ) : (
-                    column.items.map((item) => (
-                      <div
-                        key={item.id}
-                        style={{
-                          borderRadius: "0.75rem",
-                          padding: "0.9rem",
-                          backgroundColor: "#ffffff",
-                          boxShadow: "0 14px 32px -24px rgba(15, 23, 42, 0.45)",
-                          border: "1px solid #e2e8f0",
-                          display: "grid",
-                          gap: "0.4rem"
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.45rem"
-                          }}
-                        >
-                          <span
-                            aria-hidden
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: "1.5rem",
-                              height: "1.5rem",
-                              borderRadius: "0.5rem",
-                              backgroundColor:
-                                item.type === "folder" ? "#4338ca" : "#db2777",
-                              color: "#ffffff",
-                              fontSize: "0.85rem"
-                            }}
-                          >
-                            {item.type === "folder" ? "📁" : "🔗"}
-                          </span>
-                          {item.type === "url" && item.url ? (
-                            <a
-                              href={item.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{
-                                color: "#1d4ed8",
-                                fontWeight: 600,
-                                textDecoration: "none",
-                                wordBreak: "break-word"
-                              }}
-                            >
-                              {item.title}
-                            </a>
-                          ) : (
-                            <strong style={{ fontSize: "0.95rem" }}>{item.title}</strong>
-                          )}
-                        </div>
-
-                        <footer
-                          style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: "0.35rem",
-                            fontSize: "0.75rem",
-                            color: "#475569"
-                          }}
-                        >
-                          <span
-                            style={{
-                              backgroundColor: "#f1f5f9",
-                              borderRadius: "999px",
-                              padding: "0.15rem 0.6rem",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.05em",
-                              fontWeight: 600
-                            }}
-                          >
-                            {item.type === "folder" ? "Carpeta" : "Marcador"}
-                          </span>
-                          {item.type === "folder" ? (
-                            <span>{item.childrenCount} elemento(s)</span>
-                          ) : null}
-                          {item.path.length > 1 ? (
-                            <span style={{ color: "#0f172a" }}>
-                              {item.path.slice(0, -1).join(" › ")}
-                            </span>
-                          ) : null}
-                        </footer>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      ))}
+                    Sin elementos directos.
+                  </p>
+                ) : (
+                  column.items.map((item) => (
+                    <KanbanCard key={item.node.id} item={item} onOpenFolder={onOpenFolder} />
+                  ))
+                )}
+              </div>
+            </section>
+          ))
+        )}
+      </div>
     </div>
   );
 }
 
-function buildGroups(nodes: BookmarkNode[]): KanbanGroup[] {
-  return nodes.map((root) => {
-    const columns: KanbanColumn[] = [];
-    const looseItems: KanbanItem[] = [];
-
-    const children = root.children ?? [];
-
-    children.forEach((child) => {
-      if (child.type === "folder") {
-        columns.push({
-          id: child.id,
-          title: child.title,
-          items: collectColumnItems(child, [root.title, child.title])
-        });
-      } else {
-        looseItems.push({
-          id: child.id,
-          title: child.title,
-          type: "url",
-          url: child.url,
-          path: [root.title, child.title],
-          childrenCount: 0
-        });
+function KanbanCard({ item, onOpenFolder }: { item: KanbanItem; onOpenFolder: (node: BookmarkNode) => void }) {
+  const isFolder = item.node.type === "folder";
+  const childrenCount = item.node.children?.length ?? 0;
+  const fullPath = [...item.node.path, item.node.title].join(" › ");
+  const interactiveProps = isFolder
+    ? {
+        role: "button" as const,
+        tabIndex: 0,
+        onClick: () => onOpenFolder(item.node),
+        onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onOpenFolder(item.node);
+          }
+        },
+        style: { cursor: "pointer" }
       }
-    });
+    : {
+        role: "group" as const,
+        tabIndex: -1,
+        style: { cursor: "default" }
+      };
 
-    if (looseItems.length) {
-      columns.push({
-        id: `${root.id}-inline-bookmarks`,
-        title: "Marcadores sueltos",
-        items: looseItems
-      });
-    }
+  return (
+    <div
+      {...interactiveProps}
+      style={{
+        borderRadius: "0.75rem",
+        padding: "0.9rem",
+        backgroundColor: "#ffffff",
+        boxShadow: "0 14px 32px -24px rgba(15, 23, 42, 0.45)",
+        border: "1px solid #e2e8f0",
+        display: "grid",
+        gap: "0.4rem"
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.45rem"
+        }}
+      >
+        <span
+          aria-hidden
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "1.6rem",
+            height: "1.6rem",
+            borderRadius: "0.5rem",
+            backgroundColor: isFolder ? "#4338ca" : "#db2777",
+            color: "#ffffff",
+            fontSize: "0.85rem"
+          }}
+        >
+          {isFolder ? "📁" : "🔗"}
+        </span>
+        {isFolder ? (
+          <strong style={{ fontSize: "0.95rem" }}>{item.node.title}</strong>
+        ) : item.node.url ? (
+          <a
+            href={item.node.url}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              color: "#1d4ed8",
+              fontWeight: 600,
+              textDecoration: "none",
+              wordBreak: "break-word"
+            }}
+          >
+            {item.node.title}
+          </a>
+        ) : (
+          <span style={{ fontWeight: 600 }}>{item.node.title}</span>
+        )}
+      </div>
 
-    if (!columns.length) {
-      columns.push({
-        id: root.id,
-        title: root.title,
-        items: collectColumnItems(root, [root.title])
-      });
-    }
-
-    return {
-      id: root.id,
-      title: root.title,
-      columns
-    };
-  });
+      <footer
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.35rem",
+          fontSize: "0.75rem",
+          color: "#475569"
+        }}
+      >
+        <span
+          style={{
+            backgroundColor: "#f1f5f9",
+            borderRadius: "999px",
+            padding: "0.15rem 0.6rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            fontWeight: 600
+          }}
+        >
+          {isFolder ? "Carpeta" : "Marcador"}
+        </span>
+        {isFolder ? <span>{childrenCount} elemento(s)</span> : null}
+        <span style={{ color: "#0f172a" }}>{fullPath}</span>
+      </footer>
+    </div>
+  );
 }
 
-function collectColumnItems(node: BookmarkNode, parentPath: string[]): KanbanItem[] {
-  const children = node.children ?? [];
+function buildColumns(nodes: BookmarkNode[]): KanbanColumn[] {
+  const folderColumns: KanbanColumn[] = nodes
+    .filter((node) => node.type === "folder")
+    .map((folder) => ({
+      id: folder.id,
+      title: folder.title,
+      items: (folder.children ?? []).map((child) => ({ node: child }))
+    }));
 
-  return children.map((child) => ({
-    id: child.id,
-    title: child.title,
-    type: child.type,
-    url: child.url,
-    path: [...parentPath, child.title],
-    childrenCount: child.children?.length ?? 0
-  }));
+  const directBookmarks = nodes.filter((node) => node.type === "url");
+  if (directBookmarks.length > 0) {
+    folderColumns.push({
+      id: `bookmarks-${directBookmarks.map((bookmark) => bookmark.id).join("-") || "root"}`,
+      title: "Marcadores sueltos",
+      items: directBookmarks.map((bookmark) => ({ node: bookmark }))
+    });
+  }
+
+  return folderColumns;
 }

@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 - `src/` holds TypeScript source. Group cross-cutting logic under `src/lib/`, UI widgets under `src/components/`, bookmark-specific flows under `src/features/bookmarks/`, and shared hooks in `src/hooks/`.
-- `src/features/bookmarks/components/` expone `BookmarkTree` y `BookmarkKanbanBoard`; sincroniza ambas vistas cuando añadas nuevas capacidades o capacidades de filtrado.
+- `src/features/bookmarks/components/` expone `BookmarkTree` y `BookmarkKanbanBoard`; sincroniza ambas vistas cuando añadas nuevas capacidades o filtrados. El board soporta drill-down por migas, así que respeta la API (`nodes`, `trail`, `onOpenFolder`, `onNavigate`) al extenderlo.
 - `public/` stores static assets (favicons, manifest, bookmark samples in HTML). Keep large fixture files under `public/data/`.
 - Configuration lives at the repository root (`vite.config.ts`, `tsconfig.json`, `.eslintrc.cjs`). Treat these as part of the codebase and review any changes carefully.
 
@@ -12,6 +12,7 @@
 - Produce an optimized build with `npm run build`; preview it locally using `npm run preview`.
 - Lint with `npm run lint` (use `npm run lint:fix` for autofixes) and format with `npm run format`. CI runs `npm run format:check` to verify nothing is pending.
 - Al subir un archivo, los datos se guardan en `localStorage` (clave `bookmarks-map.cache`) y se restauran al recargar. El botón “Olvidar archivo” debe limpiar tanto el estado como el almacenamiento.
+- La vista seleccionada (árbol/kanban) se persiste en `localStorage` (`bookmarks-map.view-mode`); mantiene esa convención en futuras mejoras.
 - No hay suites automáticas activas; documenta el smoke test manual (subir HTML + alternar vistas) en la descripción del PR.
 
 ## Coding Style & Naming Conventions
