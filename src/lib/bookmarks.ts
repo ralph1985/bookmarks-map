@@ -77,7 +77,6 @@ function visitHtmlList(
         const siblingList = findNextList(current);
         if (siblingList) {
           folderNode.children = visitHtmlList(siblingList, folderPath, nextId);
-          current = siblingList;
         }
 
         nodes.push(folderNode);
