@@ -132,7 +132,6 @@ export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: 
 function KanbanCard({ item, onOpenFolder }: { item: KanbanItem; onOpenFolder: (node: BookmarkNode) => void }) {
   const isFolder = item.node.type === "folder";
   const childrenCount = item.node.children?.length ?? 0;
-  const fullPath = [...item.node.path, item.node.title].join(" › ");
   const cardClasses = [styles.card];
   if (isFolder) {
     cardClasses.push(styles.cardInteractive);
@@ -174,11 +173,6 @@ function KanbanCard({ item, onOpenFolder }: { item: KanbanItem; onOpenFolder: (n
         )}
       </div>
 
-      <footer className={styles.cardFooter}>
-        <span className={styles.badge}>{isFolder ? "Carpeta" : "Marcador"}</span>
-        {isFolder ? <span>{childrenCount} elemento(s)</span> : null}
-        <span className={styles.path}>{fullPath}</span>
-      </footer>
     </div>
   );
 }

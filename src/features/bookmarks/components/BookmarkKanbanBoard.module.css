@@ -184,25 +184,3 @@
   font-weight: 600;
   margin: 0;
 }
-
-.cardFooter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  font-size: 0.75rem;
-  color: #475569;
-  align-items: center;
-}
-
-.badge {
-  background-color: #f1f5f9;
-  border-radius: 999px;
-  padding: 0.15rem 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-}
-
-.path {
-  color: #0f172a;
-}
