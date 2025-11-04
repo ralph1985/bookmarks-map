@@ -17,10 +17,10 @@ Aplicación web para transformar el archivo `Bookmarks` de Google Chrome en un m
 
 ### Estructura
 - `src/` — código de la app (componentes, hooks, librerías).
-- `public/` — assets estáticos y muestras (`data/sample-bookmarks.json`).
+- `public/` — assets estáticos y muestras HTML (`data/sample-bookmarks.html`, `data/bookmarks_*.html`).
 - `tests/` — pruebas unitarias (`lib`) y E2E (`e2e`), con fixtures.
 
 ### Desarrollo rápido
 1. Clona el repositorio y ejecuta `npm install`.
 2. Inicia el servidor con `npm run dev`.
-3. Sube un archivo de marcadores o usa el ejemplo incluido para validar el flujo.
+3. Sube el archivo HTML exportado desde Chrome o usa los ejemplos incluidos para validar el flujo.

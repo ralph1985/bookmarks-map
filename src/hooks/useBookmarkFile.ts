@@ -8,14 +8,12 @@ type FileState =
   | { status: "error"; nodes: BookmarkNode[]; error: string };
 
 const ACCEPTED_TYPES = new Set([
-  "application/json",
-  "text/json",
-  "application/x-google-chrome-bookmarks",
   "text/html",
-  "application/xhtml+xml"
+  "application/xhtml+xml",
+  "application/x-google-chrome-bookmarks"
 ]);
 
-const ACCEPTED_EXTENSIONS = [".json", ".html", ".htm"];
+const ACCEPTED_EXTENSIONS = [".html", ".htm"];
 
 function isSupportedFile(file: File) {
   if (ACCEPTED_TYPES.has(file.type)) {
@@ -42,8 +40,7 @@ export function useBookmarkFile(initialNodes: BookmarkNode[] = []) {
       setFileState({
         status: "error",
         nodes: [],
-        error:
-          "El archivo debe ser el JSON `Bookmarks` o el HTML exportado desde Chrome."
+        error: "El archivo debe ser el HTML exportado desde Chrome."
       });
       return;
     }
