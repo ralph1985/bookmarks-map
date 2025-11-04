@@ -131,7 +131,6 @@ export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: 
 
 function KanbanCard({ item, onOpenFolder }: { item: KanbanItem; onOpenFolder: (node: BookmarkNode) => void }) {
   const isFolder = item.node.type === "folder";
-  const childrenCount = item.node.children?.length ?? 0;
   const cardClasses = [styles.card];
   if (isFolder) {
     cardClasses.push(styles.cardInteractive);

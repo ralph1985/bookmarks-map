@@ -7,11 +7,11 @@ import {
 } from "react";
 import { FilePicker } from "@/components/FilePicker";
 import { useBookmarkFile } from "@/hooks/useBookmarkFile";
-import { BookmarkTree, BookmarkKanbanBoard } from "@/features/bookmarks";
+import { BookmarkTree, BookmarkKanbanBoard, BookmarkDiagram } from "@/features/bookmarks";
 import type { BookmarkNode } from "@/lib/bookmarks";
 import styles from "./App.module.css";
 
-type ViewMode = "tree" | "kanban";
+type ViewMode = "tree" | "kanban" | "diagram";
 const VIEW_MODE_KEY = "bookmarks-map.view-mode";
 
 function App() {
@@ -22,10 +22,12 @@ function App() {
       return "tree";
     }
     const stored = window.localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null;
-    return stored === "kanban" ? "kanban" : "tree";
+    return stored === "kanban" || stored === "diagram" ? stored : "tree";
   });
   const [kanbanTrail, setKanbanTrail] = useState<BookmarkNode[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [diagramFocusMode, setDiagramFocusMode] = useState(false);
+  const [diagramTrail, setDiagramTrail] = useState<BookmarkNode[]>([]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -33,6 +35,27 @@ function App() {
     }
     window.localStorage.setItem(VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    if (viewMode !== "diagram") {
+      setDiagramFocusMode(false);
+    }
+  }, [viewMode]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    if (viewMode === "diagram" && diagramFocusMode) {
+      const { style } = document.body;
+      const previous = style.overflow;
+      style.overflow = "hidden";
+      return () => {
+        style.overflow = previous;
+      };
+    }
+  }, [viewMode, diagramFocusMode]);
 
   const displayNodes = useMemo(() => deriveDisplayNodes(nodes), [nodes]);
   const filteredNodes = useMemo(
@@ -48,19 +71,85 @@ function App() {
     return current.children ?? [];
   }, [kanbanTrail, filteredNodes]);
 
+  const diagramRoots = useMemo(() => {
+    if (diagramTrail.length === 0) {
+      return filteredNodes;
+    }
+    const current = diagramTrail[diagramTrail.length - 1];
+    return current ? [current] : filteredNodes;
+  }, [diagramTrail, filteredNodes]);
+
   useEffect(() => {
     setKanbanTrail([]);
+    setDiagramTrail([]);
   }, [meta?.fileName, meta?.savedAt]);
 
   useEffect(() => {
     if (!meta && isIdle) {
       setKanbanTrail([]);
+      setDiagramTrail([]);
     }
   }, [meta, isIdle]);
 
   useEffect(() => {
     setKanbanTrail([]);
+    setDiagramTrail([]);
   }, [searchQuery]);
+
+  useEffect(() => {
+    setDiagramTrail((previous) => {
+      if (previous.length === 0) {
+        return previous;
+      }
+      const index = indexNodes(filteredNodes);
+      const next: BookmarkNode[] = [];
+      for (const node of previous) {
+        const updated = index.get(node.id);
+        if (!updated) {
+          break;
+        }
+        next.push(updated);
+      }
+      if (next.length === 0) {
+        return next;
+      }
+      if (next.length !== previous.length) {
+        return next;
+      }
+      for (let i = 0; i < next.length; i += 1) {
+        if (next[i] !== previous[i]) {
+          return next;
+        }
+      }
+      return previous;
+    });
+  }, [filteredNodes]);
+
+  useEffect(() => {
+    if (viewMode !== "diagram") {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+      if (diagramTrail.length > 0) {
+        event.preventDefault();
+        setDiagramTrail((previous) => previous.slice(0, previous.length - 1));
+        return;
+      }
+      if (diagramFocusMode) {
+        event.preventDefault();
+        setDiagramFocusMode(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [viewMode, diagramTrail.length, diagramFocusMode]);
 
   const trimmedQuery = searchQuery.trim();
   const canRender = filteredNodes.length > 0;
@@ -97,6 +186,34 @@ function App() {
 
   const handleNavigateTrail = useCallback((targetIndex: number) => {
     setKanbanTrail((previous) => {
+      if (targetIndex < 0) {
+        return [];
+      }
+      return previous.slice(0, targetIndex + 1);
+    });
+  }, []);
+
+  const handleDiagramOpenFolder = useCallback(
+    (node: BookmarkNode) => {
+      if (searchQuery.trim()) {
+        return;
+      }
+      if (node.type !== "folder" || (node.children?.length ?? 0) === 0) {
+        return;
+      }
+      setDiagramTrail((previous) => {
+        const alreadyCurrent = previous[previous.length - 1];
+        if (alreadyCurrent && alreadyCurrent.id === node.id) {
+          return previous;
+        }
+        return [...previous, node];
+      });
+    },
+    [searchQuery],
+  );
+
+  const handleDiagramNavigate = useCallback((targetIndex: number) => {
+    setDiagramTrail((previous) => {
       if (targetIndex < 0) {
         return [];
       }
@@ -170,6 +287,22 @@ function App() {
           onClick={() => setViewMode("kanban")}
           disabled={!canRender}
         />
+        <ToggleButton
+          label="Diagrama"
+          active={viewMode === "diagram"}
+          onClick={() => setViewMode("diagram")}
+          disabled={!canRender}
+        />
+        {viewMode === "diagram" ? (
+          <button
+            type="button"
+            className={styles.focusButton}
+            onClick={() => setDiagramFocusMode(true)}
+            disabled={!canRender || diagramFocusMode}
+          >
+            Ver solo diagrama
+          </button>
+        ) : null}
       </section>
 
       {isError ? (
@@ -187,15 +320,44 @@ function App() {
           </div>
         ) : viewMode === "tree" ? (
           <BookmarkTree nodes={filteredNodes} />
-        ) : (
+        ) : viewMode === "kanban" ? (
           <BookmarkKanbanBoard
             nodes={kanbanRoots}
             trail={kanbanTrail}
             onOpenFolder={handleOpenFolder}
             onNavigate={handleNavigateTrail}
           />
+        ) : (
+          <BookmarkDiagram
+            nodes={diagramRoots}
+            trail={diagramTrail}
+            onOpenFolder={handleDiagramOpenFolder}
+            onNavigate={handleDiagramNavigate}
+          />
         )}
       </main>
+      {viewMode === "diagram" && diagramFocusMode ? (
+        <div className={styles.focusOverlay} role="dialog" aria-modal="true">
+          <div className={styles.focusContent}>
+            <div className={styles.focusTopBar}>
+              <button
+                type="button"
+                onClick={() => setDiagramFocusMode(false)}
+                className={styles.focusCloseButton}
+              >
+                Salir de modo diagrama
+              </button>
+            </div>
+            <BookmarkDiagram
+              nodes={diagramRoots}
+              focusMode
+              trail={diagramTrail}
+              onOpenFolder={handleDiagramOpenFolder}
+              onNavigate={handleDiagramNavigate}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -305,4 +467,18 @@ function trimPath(path: string[], rootLower: string) {
   }
 
   return [...path];
+}
+
+function indexNodes(nodes: BookmarkNode[]) {
+  const map = new Map<string, BookmarkNode>();
+  const walk = (list: BookmarkNode[]) => {
+    list.forEach((node) => {
+      map.set(node.id, node);
+      if (node.children) {
+        walk(node.children);
+      }
+    });
+  };
+  walk(nodes);
+  return map;
 }

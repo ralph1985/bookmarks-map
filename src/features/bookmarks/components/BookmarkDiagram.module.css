@@ -1,0 +1,227 @@
+.diagram {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.diagramHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.backButton {
+  border: none;
+  background-color: #1e3a8a;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.backButton:disabled {
+  background-color: #cbd5f5;
+  color: #475569;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.backButton:not(:disabled):hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.breadcrumbButton {
+  border: none;
+  background: transparent;
+  color: #1d4ed8;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.breadcrumbButton:hover {
+  background-color: rgba(29, 78, 216, 0.08);
+}
+
+.breadcrumbCurrent {
+  font-weight: 600;
+  color: #1e293b;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(148, 163, 184, 0.2);
+}
+
+.diagramFocus {
+  position: relative;
+  flex: 1 1 auto;
+  height: 100%;
+  gap: 1rem;
+  grid-template-rows: auto 1fr auto;
+  min-height: 0;
+}
+
+.toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  border: 1px solid #cbd5f5;
+  background: linear-gradient(135deg, #eef2ff, #dbeafe);
+  box-shadow: 0 6px 18px rgba(30, 64, 175, 0.12);
+}
+
+.toolbarButton {
+  border: none;
+  background-color: #1e3a8a;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.toolbarButton:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.viewport {
+  position: relative;
+  border: 1px solid #cbd5f5;
+  border-radius: 1rem;
+  background: radial-gradient(circle at top, #f1f5f9, #e2e8f0);
+  min-height: 320px;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+
+.viewportDefault {
+  height: clamp(320px, 65vh, 680px);
+}
+
+.viewportFocus {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.viewportPanning {
+  cursor: grabbing;
+}
+
+.inner {
+  position: relative;
+  transform-origin: 0 0;
+}
+
+.linksLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.linkPath {
+  stroke: #94a3b8;
+  stroke-width: 1.5px;
+  fill: none;
+  opacity: 0.7;
+}
+
+.nodesLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.node {
+  position: absolute;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.9rem;
+  border: 1px solid #cbd5f5;
+  background-color: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  min-height: 3.5rem;
+  max-width: 220px;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+
+.nodeFolder {
+  background: linear-gradient(145deg, #eef2ff, #e0e7ff);
+  border-color: #a5b4fc;
+}
+
+.nodeBookmark {
+  background: linear-gradient(145deg, #ecfeff, #cffafe);
+  border-color: #67e8f9;
+}
+
+.nodeInteractive {
+  cursor: pointer;
+  outline: none;
+}
+
+.nodeInteractive:focus-visible {
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.4);
+}
+
+.nodeHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.nodeIcon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.nodeTitle {
+  font-size: 0.96rem;
+  word-break: break-word;
+}
+
+.nodeLink {
+  color: #1d4ed8;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.nodeLink:hover {
+  text-decoration: underline;
+}
+
+.nodeMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: #475569;
+  font-size: 0.78rem;
+}
+
+.helper {
+  margin: 0;
+  color: #475569;
+  font-size: 0.85rem;
+}
