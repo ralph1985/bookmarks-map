@@ -104,11 +104,6 @@ function App() {
         <button type="button" onClick={reset} disabled={isIdle} className={styles.resetButton}>
           Olvidar archivo
         </button>
-        <nav className={styles.samples}>
-          <a href="/data/sample-bookmarks.html" download className={styles.sampleLink}>
-            HTML de ejemplo
-          </a>
-        </nav>
         {meta ? (
           <p className={styles.meta}>
             Usando <strong>{meta.fileName}</strong> (guardado {savedAtLabel}). Sube otro archivo

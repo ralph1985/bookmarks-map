@@ -46,21 +46,6 @@
   background-color: #c7d2fe;
 }
 
-.samples {
-  display: flex;
-  gap: 1rem;
-}
-
-.sampleLink {
-  color: #2563eb;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.sampleLink:hover {
-  text-decoration: underline;
-}
-
 .meta {
   flex-basis: 100%;
   margin: 0;

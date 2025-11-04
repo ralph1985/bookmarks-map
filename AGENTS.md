@@ -3,7 +3,7 @@
 ## Project Structure & Module Organization
 - `src/` holds TypeScript source. Group cross-cutting logic under `src/lib/`, UI widgets under `src/components/`, bookmark-specific flows under `src/features/bookmarks/`, and shared hooks in `src/hooks/`.
 - `src/features/bookmarks/components/` expone `BookmarkTree` y `BookmarkKanbanBoard`; sincroniza ambas vistas cuando añadas nuevas capacidades o filtrados. El board soporta drill-down por migas, así que respeta la API (`nodes`, `trail`, `onOpenFolder`, `onNavigate`) al extenderlo.
-- `public/` stores static assets (favicons, manifest, bookmark samples in HTML). Keep large fixture files under `public/data/`.
+- `public/` stores static assets (favicons, manifest) y queda libre para configuraciones futuras.
 - Configuration lives at the repository root (`vite.config.ts`, `tsconfig.json`, `.eslintrc.cjs`). Treat these as part of the codebase and review any changes carefully.
 
 ## Build & Development Commands
