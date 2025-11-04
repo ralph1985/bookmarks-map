@@ -23,6 +23,9 @@ Aplicación web para transformar el archivo `Bookmarks` de Google Chrome en un m
 - **Kanban:** cada carpeta principal se convierte en una columna horizontal (con scroll) que lista sus subcarpetas y marcadores como tarjetas.
 Usa los botones de la parte superior para alternar entre ambas vistas.
 
+### Persistencia local
+Tras subir un archivo HTML, la aplicación guarda el contenido en `localStorage` y lo restaura automáticamente en visitas posteriores. Usa el botón “Olvidar archivo” para limpiar la sesión y cargar un archivo nuevo desde cero.
+
 ### Desarrollo rápido
 1. Clona el repositorio y ejecuta `npm install`.
 2. Inicia el servidor con `npm run dev`.

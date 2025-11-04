@@ -11,6 +11,7 @@
 - Start local development using `npm run dev`; la app procesa exportaciones HTML de Chrome mediante `FileReader` en el navegador.
 - Produce an optimized build with `npm run build`; preview it locally using `npm run preview`.
 - Lint with `npm run lint` (use `npm run lint:fix` for autofixes) and format with `npm run format`. CI runs `npm run format:check` to verify nothing is pending.
+- Al subir un archivo, los datos se guardan en `localStorage` (clave `bookmarks-map.cache`) y se restauran al recargar. El botón “Olvidar archivo” debe limpiar tanto el estado como el almacenamiento.
 - No hay suites automáticas activas; documenta el smoke test manual (subir HTML + alternar vistas) en la descripción del PR.
 
 ## Coding Style & Naming Conventions

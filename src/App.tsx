@@ -6,11 +6,22 @@ import { BookmarkTree, BookmarkKanbanBoard } from "@/features/bookmarks";
 type ViewMode = "tree" | "kanban";
 
 function App() {
-  const { nodes, isIdle, isLoading, isError, error, onFileSelected, reset } =
+  const { nodes, meta, isIdle, isLoading, isError, error, onFileSelected, reset } =
     useBookmarkFile();
   const [viewMode, setViewMode] = useState<ViewMode>("tree");
 
   const canRender = nodes.length > 0;
+  const savedAtLabel = meta
+    ? new Date(meta.savedAt).toLocaleString("es-ES", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      })
+    : null;
+  const uploadLabel = isLoading
+    ? "Procesando…"
+    : meta
+    ? "Actualizar marcadores"
+    : "Subir marcadores";
 
   return (
     <div
@@ -40,7 +51,7 @@ function App() {
         }}
       >
         <FilePicker
-          label={isLoading ? "Procesando…" : "Subir marcadores"}
+          label={uploadLabel}
           accept=".html,.htm,text/html,application/xhtml+xml"
           onFileSelected={onFileSelected}
         />
@@ -58,7 +69,7 @@ function App() {
             fontWeight: 600
           }}
         >
-          Limpiar
+          Olvidar archivo
         </button>
         <nav style={{ display: "flex", gap: "1rem" }}>
           <a
@@ -69,6 +80,19 @@ function App() {
             HTML de ejemplo
           </a>
         </nav>
+        {meta ? (
+          <p
+            style={{
+              flexBasis: "100%",
+              margin: 0,
+              fontSize: "0.9rem",
+              color: "#475569"
+            }}
+          >
+            Usando <strong>{meta.fileName}</strong> (guardado {savedAtLabel}). Sube
+            otro archivo para actualizar o pulsa “Olvidar archivo” para limpiar la vista.
+          </p>
+        ) : null}
       </section>
 
       <section
