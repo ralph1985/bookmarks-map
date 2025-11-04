@@ -90,9 +90,11 @@ function App() {
         display: "grid",
         gridTemplateColumns: "minmax(0, 1fr)",
         gap: "1.5rem",
-        padding: "2rem",
-        maxWidth: "960px",
-        margin: "0 auto"
+        padding: "2rem 3vw",
+        width: "100%",
+        maxWidth: "100%",
+        margin: "0 auto",
+        boxSizing: "border-box"
       }}
     >
       <header>

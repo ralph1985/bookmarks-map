@@ -1,4 +1,4 @@
-import { useMemo, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { BookmarkNode } from "@/lib/bookmarks";
 
 type Props = {
@@ -19,6 +19,9 @@ type KanbanItem = {
 };
 
 export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: Props) {
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [stickyOffset, setStickyOffset] = useState(72);
+
   const columns = useMemo(() => buildColumns(nodes), [nodes]);
   const breadcrumbs = useMemo(
     () => [
@@ -35,14 +38,45 @@ export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: 
     onNavigate(trail.length - 2);
   };
 
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header || typeof window === "undefined" || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const computeOffset = () => {
+      setStickyOffset(header.getBoundingClientRect().height + 16);
+    };
+
+    computeOffset();
+
+    const resizeObserver = new ResizeObserver(() => computeOffset());
+    resizeObserver.observe(header);
+    window.addEventListener("resize", computeOffset);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", computeOffset);
+    };
+  }, [nodes, trail]);
+
   return (
-    <div style={{ display: "grid", gap: "1.5rem" }}>
+    <div style={{ display: "grid", gap: "1.5rem", position: "relative" }}>
       <header
+        ref={headerRef}
         style={{
           display: "flex",
           flexWrap: "wrap",
           gap: "0.75rem",
-          alignItems: "center"
+          alignItems: "center",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          padding: "0.75rem 0",
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.75) 100%)",
+          backdropFilter: "blur(8px)",
+          borderBottom: "1px solid #e2e8f0"
         }}
       >
         <button
@@ -131,7 +165,8 @@ export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: 
                 backgroundColor: "#f8fafc",
                 borderRadius: "0.75rem",
                 border: "1px solid #e2e8f0",
-                padding: "1rem"
+                padding: "1rem",
+                boxSizing: "border-box"
               }}
             >
               <header
@@ -139,7 +174,13 @@ export function BookmarkKanbanBoard({ nodes, trail, onOpenFolder, onNavigate }: 
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  gap: "0.75rem"
+                  gap: "0.75rem",
+                  paddingBottom: "0.35rem",
+                  borderBottom: "1px solid rgba(148, 163, 184, 0.4)",
+                  position: "sticky",
+                  top: stickyOffset,
+                  backgroundColor: "#f8fafc",
+                  zIndex: 2
                 }}
               >
                 <h3
