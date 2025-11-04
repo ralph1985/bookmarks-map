@@ -11,14 +11,12 @@ Aplicación web para transformar el archivo `Bookmarks` de Google Chrome en un m
 - `npm run dev` — servidor de desarrollo con Vite.
 - `npm run build` — valida tipos y genera la build optimizada.
 - `npm run preview` — sirve la build generada localmente.
-- `npm test` — ejecuta Vitest en modo unitario/integración.
 - `npm run lint` / `npm run lint:fix` — ejecuta ESLint.
 - `npm run format` / `npm run format:check` — formatea con Prettier.
 
 ### Estructura
 - `src/` — código de la app (componentes, hooks, librerías).
 - `public/` — assets estáticos y muestras HTML (`data/sample-bookmarks.html`, `data/bookmarks_*.html`).
-- `tests/` — pruebas unitarias (`lib`) y E2E (`e2e`), con fixtures.
 
 ### Desarrollo rápido
 1. Clona el repositorio y ejecuta `npm install`.
