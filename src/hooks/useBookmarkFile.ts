@@ -7,17 +7,23 @@ type FileState =
   | { status: "loaded"; nodes: BookmarkNode[]; error: null }
   | { status: "error"; nodes: BookmarkNode[]; error: string };
 
-const ACCEPTED_TYPES = [
+const ACCEPTED_TYPES = new Set([
   "application/json",
   "text/json",
-  "application/x-google-chrome-bookmarks"
-];
+  "application/x-google-chrome-bookmarks",
+  "text/html",
+  "application/xhtml+xml"
+]);
+
+const ACCEPTED_EXTENSIONS = [".json", ".html", ".htm"];
 
 function isSupportedFile(file: File) {
-  if (ACCEPTED_TYPES.includes(file.type)) {
+  if (ACCEPTED_TYPES.has(file.type)) {
     return true;
   }
-  return file.name.endsWith(".json");
+
+  const normalizedName = file.name.toLowerCase();
+  return ACCEPTED_EXTENSIONS.some((extension) => normalizedName.endsWith(extension));
 }
 
 export function useBookmarkFile(initialNodes: BookmarkNode[] = []) {
@@ -36,7 +42,8 @@ export function useBookmarkFile(initialNodes: BookmarkNode[] = []) {
       setFileState({
         status: "error",
         nodes: [],
-        error: "El archivo debe ser un JSON de marcadores exportado desde Chrome."
+        error:
+          "El archivo debe ser el JSON `Bookmarks` o el HTML exportado desde Chrome."
       });
       return;
     }

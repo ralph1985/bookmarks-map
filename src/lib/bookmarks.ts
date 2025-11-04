@@ -70,6 +70,33 @@ function visitNode(node: ChromeBookmarkNode, path: string[]): BookmarkNode {
 }
 
 export function parseBookmarkPayload(payload: string): BookmarkNode[] {
+  const trimmed = payload.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  if (looksLikeJson(trimmed)) {
+    try {
+      return parseChromeJson(trimmed);
+    } catch (error) {
+      if (!looksLikeHtml(trimmed)) {
+        throw error;
+      }
+      // fallthrough to HTML parsing
+    }
+  }
+
+  if (looksLikeHtml(trimmed)) {
+    return parseNetscapeHtml(trimmed);
+  }
+
+  throw new Error(
+    "Formato no soportado. Sube el archivo JSON (`Bookmarks`) o el HTML exportado desde Chrome.",
+  );
+}
+
+function parseChromeJson(payload: string): BookmarkNode[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(payload);
@@ -77,7 +104,7 @@ export function parseBookmarkPayload(payload: string): BookmarkNode[] {
     throw new Error(
       error instanceof Error
         ? `No se pudo interpretar el JSON: ${error.message}`
-        : "No se pudo interpretar el JSON proporcionado."
+        : "No se pudo interpretar el JSON proporcionado.",
     );
   }
 
@@ -95,6 +122,103 @@ export function parseBookmarkPayload(payload: string): BookmarkNode[] {
   );
 }
 
+function parseNetscapeHtml(payload: string): BookmarkNode[] {
+  const parser = new DOMParser();
+  const document = parser.parseFromString(payload, "text/html");
+
+  const rootList = document.body.querySelector("dl");
+
+  if (!rootList) {
+    throw new Error("No se encontró la estructura principal de marcadores en el HTML.");
+  }
+
+  let sequence = 0;
+  const nextId = () => {
+    sequence += 1;
+    return `html-${sequence}`;
+  };
+
+  return visitHtmlList(rootList as HTMLDListElement, [], nextId);
+}
+
+function visitHtmlList(
+  list: HTMLDListElement,
+  path: string[],
+  nextId: () => string,
+): BookmarkNode[] {
+  const nodes: BookmarkNode[] = [];
+  let current: Element | null = list.firstElementChild;
+
+  while (current) {
+    if (current.tagName === "DT") {
+      const heading = current.querySelector("h3, h4");
+      const anchor = current.querySelector("a");
+
+      if (heading) {
+        const title = heading.textContent?.trim() ?? "Carpeta sin título";
+        const folderPath = path.length ? [...path, title] : [title];
+        const folderNode: BookmarkNode = {
+          id: nextId(),
+          title,
+          type: "folder",
+          dateAdded: heading.getAttribute("add_date") ?? undefined,
+          dateModified: heading.getAttribute("last_modified") ?? undefined,
+          path: folderPath,
+          children: []
+        };
+
+        const siblingList = findNextList(current);
+        if (siblingList) {
+          folderNode.children = visitHtmlList(siblingList, folderPath, nextId);
+          current = siblingList;
+        }
+
+        nodes.push(folderNode);
+      } else if (anchor) {
+        const title =
+          anchor.textContent?.trim() ||
+          anchor.getAttribute("href") ||
+          "Marcador sin título";
+
+        nodes.push({
+          id: nextId(),
+          title,
+          type: "url",
+          url: anchor.getAttribute("href") ?? undefined,
+          dateAdded: anchor.getAttribute("add_date") ?? undefined,
+          dateModified: anchor.getAttribute("last_modified") ?? undefined,
+          path
+        });
+      }
+    }
+
+    current = current.nextElementSibling;
+  }
+
+  return nodes;
+}
+
+function findNextList(element: Element): HTMLDListElement | null {
+  const childList = Array.from(element.children).find(
+    (child) => child.tagName === "DL",
+  );
+  if (childList) {
+    return childList as HTMLDListElement;
+  }
+
+  let pointer: Element | null = element.nextElementSibling;
+
+  while (pointer) {
+    if (pointer.tagName === "DL") {
+      return pointer as HTMLDListElement;
+    }
+
+    pointer = pointer.nextElementSibling;
+  }
+
+  return null;
+}
+
 function formatRootName(key: string, fallback?: string) {
   if (fallback) {
     return fallback;
@@ -110,4 +234,13 @@ function formatRootName(key: string, fallback?: string) {
     default:
       return key;
   }
+}
+
+function looksLikeJson(payload: string) {
+  const firstChar = payload[0];
+  return firstChar === "{" || firstChar === "[";
+}
+
+function looksLikeHtml(payload: string) {
+  return payload.startsWith("<");
 }

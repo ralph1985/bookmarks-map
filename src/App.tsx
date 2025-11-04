@@ -35,7 +35,7 @@ function App() {
       >
         <FilePicker
           label={isLoading ? "Procesando…" : "Subir marcadores"}
-          accept=".json,application/json"
+          accept=".json,.html,application/json,text/html"
           onFileSelected={onFileSelected}
         />
         <button
@@ -54,13 +54,22 @@ function App() {
         >
           Limpiar
         </button>
-        <a
-          href="/data/sample-bookmarks.json"
-          download
-          style={{ color: "#2563eb", fontWeight: 500 }}
-        >
-          Descargar ejemplo
-        </a>
+        <nav style={{ display: "flex", gap: "1rem" }}>
+          <a
+            href="/data/sample-bookmarks.json"
+            download
+            style={{ color: "#2563eb", fontWeight: 500 }}
+          >
+            JSON de ejemplo
+          </a>
+          <a
+            href="/data/sample-bookmarks.html"
+            download
+            style={{ color: "#2563eb", fontWeight: 500 }}
+          >
+            HTML de ejemplo
+          </a>
+        </nav>
       </section>
 
       {isError ? (
